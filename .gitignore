@@ -1,0 +1,12 @@
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+
+# 환경변수 (절대 git에 올리면 안됨!)
+.env
+
+# 로그
+*.log
