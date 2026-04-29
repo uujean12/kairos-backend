@@ -22,6 +22,9 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    private String phone;
+    private String address;
+
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
@@ -43,5 +46,10 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void updateContactInfo(String phone, String address) {
+        if (phone != null && !phone.isEmpty()) this.phone = phone;
+        if (address != null && !address.isEmpty()) this.address = address;
     }
 }

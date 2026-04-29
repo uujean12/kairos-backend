@@ -79,6 +79,9 @@ public class OrderCommandService implements OrderUseCase {
 
         order.setTotalPrice(total);
         order.getItems().addAll(orderItems);
+        // 주문 완료 후 유저 연락처 정보 저장
+        user.updateContactInfo(command.phone(), command.address());
+        userRepository.save(user);
 
         return orderRepository.save(order);
     }
@@ -106,4 +109,5 @@ public class OrderCommandService implements OrderUseCase {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
+
 }

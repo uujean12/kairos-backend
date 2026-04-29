@@ -70,6 +70,17 @@ public class AuthController {
         return ResponseEntity.ok(toUserMap(user));
     }
 
+    private Map<String, Object> toUserMap(User u) {
+        return Map.of(
+                "id", u.getId(),
+                "email", u.getEmail(),
+                "name", u.getName(),
+                "role", u.getRole().name(),
+                "phone", u.getPhone() != null ? u.getPhone() : "",
+                "address", u.getAddress() != null ? u.getAddress() : ""
+        );
+    }
+
     // 이름으로 이메일 찾기
     @PostMapping("/find-email")
     public ResponseEntity<?> findEmail(@RequestBody Map<String, String> body) {
@@ -106,19 +117,36 @@ public class AuthController {
                 .orElse(ResponseEntity.badRequest().body(Map.of("message", "이메일을 찾을 수 없습니다.")));
     }
 
-    private Map<String, Object> toUserMap(User u) {
-        return Map.of(
-                "id", u.getId(),
-                "email", u.getEmail(),
-                "name", u.getName(),
-                "role", u.getRole().name()
-        );
-    }
-
     // 이메일 마스킹 (예: te***@gmail.com)
     private String maskEmail(String email) {
         int atIndex = email.indexOf('@');
         if (atIndex <= 2) return email;
         return email.substring(0, 2) + "***" + email.substring(atIndex);
+    }
+
+    // 유저 정보 수정 (전화번호, 주소)
+    @PutMapping("/update-info")
+    public ResponseEntity<?> updateInfo(@AuthenticationPrincipal User user,
+                                        @RequestBody Map<String, String> body) {
+        user.updateContactInfo(body.get("phone"), body.get("address"));
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "email", user.getEmail(),
+                "name", user.getName(),
+                "phone", user.getPhone() != null ? user.getPhone() : "",
+                "address", user.getAddress() != null ? user.getAddress() : "",
+                "role", user.getRole().name()
+        ));
+    }
+
+    // 이메일 중복 확인
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        if (userRepository.existsByEmail(email)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "이미 사용 중인 이메일입니다."));
+        }
+        return ResponseEntity.ok(Map.of("message", "사용 가능한 이메일입니다."));
     }
 }
