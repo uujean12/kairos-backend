@@ -414,20 +414,17 @@ public class OrderCommandService implements OrderUseCase {
 ## 🛠️ 트러블슈팅
 
 ### Hibernate Lazy Loading Jackson 직렬화 오류
-- **문제**: `ByteBuddyInterceptor` 직렬화 오류 발생
-- **해결**: `JacksonConfig`에 `Hibernate6Module` + `JavaTimeModule` 등록, Entity에 `@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})` 추가
+- **문제**: ByteBuddyInterceptor 직렬화 오류 발생
+- **해결**: JacksonConfig에 Hibernate6Module + JavaTimeModule 등록, Entity에 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 추가
 
 ### OAuth2 Redirect URI 환경별 충돌
-- **문제**: 로컬/배포 환경에서 `redirect_uri_mismatch` 오류
-- **해결**: `application.yml`에 환경별 URI 명시, Railway 환경변수로 분리 관리
+- **문제**: 로컬/배포 환경에서 redirect_uri_mismatch 오류
+- **해결**: application.yml에 환경별 URI 명시, Railway 환경변수로 분리 관리
 
 ### Payment orderId 컬럼 충돌
-- **문제**: `@OneToOne order`의 FK 컬럼명과 `orderId` 필드가 모두 `order_id`로 매핑되어 충돌
-- **해결**: `@Column(name = "toss_order_id")`로 컬럼명 명시
+- **문제**: @OneToOne order의 FK 컬럼명과 orderId 필드가 모두 order_id로 매핑되어 충돌
+- **해결**: @Column(name = "toss_order_id")로 컬럼명 명시
 
-### MySQL 버전 업그레이드 충돌
-- **문제**: MySQL 8.x 데이터가 남은 상태에서 9.x 설치 시 `Cannot upgrade from 80200 to 90600` 오류
-- **해결**: 기존 데이터 디렉토리 삭제 후 재초기화
 
 <br>
 
