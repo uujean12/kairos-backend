@@ -4,6 +4,7 @@ import com.kairos.domain.user.User;
 import com.kairos.domain.user.UserRepository;
 import com.kairos.infrastructure.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,12 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${kakao.client-id:}")
+    private String kakaoClientId;
+
+    @Value("${app.kakao.logout-redirect-uri:http://localhost:3000}")
+    private String kakaoLogoutRedirectUri;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
@@ -59,8 +66,19 @@ public class AuthController {
                         .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다.")));
     }
 
+
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<?> logout(@AuthenticationPrincipal User user) {
+        if (user != null && user.getProvider() == User.AuthProvider.KAKAO) {
+            // 카카오 로그아웃 URL 반환
+            String kakaoLogoutUrl = "https://kauth.kakao.com/oauth/logout"
+                    + "?client_id=" + kakaoClientId
+                    + "&logout_redirect_uri=" + kakaoLogoutRedirectUri;
+            return ResponseEntity.ok(Map.of(
+                    "message", "카카오 로그아웃",
+                    "kakaoLogoutUrl", kakaoLogoutUrl
+            ));
+        }
         return ResponseEntity.ok(Map.of("message", "로그아웃되었습니다."));
     }
 
@@ -79,6 +97,57 @@ public class AuthController {
                 "phone", u.getPhone() != null ? u.getPhone() : "",
                 "address", u.getAddress() != null ? u.getAddress() : ""
         );
+    }
+
+    // 카카오 추가 정보 입력 후 회원가입
+    @PostMapping("/kakao-register")
+    public ResponseEntity<?> kakaoRegister(@RequestBody Map<String, String> body) {
+        String kakaoId = body.get("kakaoId");
+        String name = body.get("name");
+        String email = body.get("email");
+
+        if (userRepository.existsByEmail(email)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "이미 사용 중인 이메일입니다."));
+        }
+
+        User user = User.builder()
+                .email(email)
+                .name(name)
+                .provider(User.AuthProvider.KAKAO)
+                .build();
+
+        User saved = userRepository.save(user);
+        String token = jwtTokenProvider.generateToken(saved.getId(), saved.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "accessToken", token,
+                "user", toUserMap(saved)
+        ));
+    }
+
+    // Google 추가 정보 동의 후 회원가입
+    @PostMapping("/google-register")
+    public ResponseEntity<?> googleRegister(@RequestBody Map<String, String> body) {
+        String name = body.get("name");
+        String email = body.get("email");
+
+        // 이미 가입된 경우 바로 로그인
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> userRepository.save(
+                        User.builder()
+                                .email(email)
+                                .name(name)
+                                .provider(User.AuthProvider.GOOGLE)
+                                .build()
+                ));
+
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "accessToken", token,
+                "user", toUserMap(user)
+        ));
     }
 
     // 이름으로 이메일 찾기

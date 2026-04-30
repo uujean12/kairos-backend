@@ -32,23 +32,30 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String email = extractEmail(oAuth2User);
         String name = extractName(oAuth2User);
         String registrationId = extractRegistrationId(request);
-
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .email(email)
-                                .name(name)
-                                .provider(registrationId.equals("google")
-                                        ? User.AuthProvider.GOOGLE : User.AuthProvider.KAKAO)
-                                .build()
-                ));
-
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
-
-        // Redirect to frontend with token
         String frontendUrl = allowedOrigins.split(",")[0].trim();
+
+        if (registrationId.equals("kakao")) {
+            // 카카오는 추가 정보 입력 페이지로
+            String kakaoId = String.valueOf(oAuth2User.getAttributes().get("id"));
+            getRedirectStrategy().sendRedirect(request, response,
+                    frontendUrl + "/additional-info?provider=kakao&kakaoId=" + kakaoId);
+            return;
+        }
+
+        // Google은 기존 회원이면 바로 로그인
+        if (userRepository.findByEmail(email).isPresent()) {
+            User user = userRepository.findByEmail(email).get();
+            String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
+            getRedirectStrategy().sendRedirect(request, response,
+                    frontendUrl + "/oauth2/callback?token=" + token);
+            return;
+        }
+
+        // Google 신규 회원은 개인정보 동의 페이지로
+        String tempEmail = java.net.URLEncoder.encode(email, "UTF-8");
+        String tempName = java.net.URLEncoder.encode(name, "UTF-8");
         getRedirectStrategy().sendRedirect(request, response,
-                frontendUrl + "/oauth2/callback?token=" + token);
+                frontendUrl + "/additional-info?provider=google&email=" + tempEmail + "&name=" + tempName);
     }
 
     private String extractEmail(OAuth2User user) {
