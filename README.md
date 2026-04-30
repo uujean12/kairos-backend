@@ -1,10 +1,14 @@
 # kairos-backend
 
-> 운동 용품 전문 커머스 플랫폼 **kairos**의 백엔드 서버
+운동 용품 전문 커머스 플랫폼입니다.
+<br>
 
-DDD + 헥사고날 아키텍처를 적용하여 도메인 중심으로 설계된 Spring Boot 기반 RESTful API 서버입니다.
-토스페이먼츠 결제 연동, OAuth2 소셜 로그인, JWT 인증을 포함한 커머스 핵심 기능을 제공합니다.
+>DDD + 헥사고날 아키텍처를 적용하여 도메인 중심으로 설계된 Spring Boot 기반 RESTful API 서버입니다.<br>
+>토스페이먼츠 결제 연동, OAuth2 소셜 로그인, JWT 인증을 포함한 커머스 핵심 기능을 제공합니다.
 
+<img width="1512" height="807" alt="스크린샷 2026-04-30 오후 12 34 03" src="https://github.com/user-attachments/assets/c8b6c745-2ccb-46bf-9418-388516cf4656" />
+
+<br>
 <br>
 
 ## 📋 프로젝트 개요
@@ -219,8 +223,7 @@ mysql -u root -p -e "CREATE DATABASE kairos CHARACTER SET utf8mb4 COLLATE utf8mb
 
 ```bash
 mvn clean install -DskipTests
-mvn spring-boot:run<img width="1512" height="807" alt="스크린샷 2026-04-30 오후 12 34 03" src="https://github.com/user-attachments/assets/6c128673-9c1d-42b7-bca3-8711d7790b7f" />
-<img width="1512" height="807" alt="스크린샷 2026-04-30 오후 12 34 03" src="https://github.com/user-attachments/assets/9cd06f53-0b13-468c-8252-a313e5e5f689" />
+mvn spring-boot:run
 
 ```
 
