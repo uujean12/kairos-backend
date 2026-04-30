@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: "https://kairos-backend-production-cd83.up.railway.app/login/oauth2/code/google"
+          kakao:
+            redirect-uri: "https://kairos-backend-production-cd83.up.railway.app/login/oauth2/code/kakao"
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+  kakao:
+    logout-redirect-uri: "https://kaiiros.shop"
+  toss:
+    success-url: ${TOSS_SUCCESS_URL}
+    fail-url: ${TOSS_FAIL_URL}

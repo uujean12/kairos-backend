@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/kairos?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+          kakao:
+            redirect-uri: "http://localhost:8080/login/oauth2/code/kakao"
+
+app:
+  cors:
+    allowed-origins: "http://localhost:3000"
+  kakao:
+    logout-redirect-uri: "http://localhost:3000"
+  toss:
+    success-url: "http://localhost:3000/payment/success"
+    fail-url: "http://localhost:3000/payment/fail"
