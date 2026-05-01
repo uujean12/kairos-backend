@@ -186,7 +186,7 @@ public class AuthController {
                 .orElse(ResponseEntity.badRequest().body(Map.of("message", "이메일을 찾을 수 없습니다.")));
     }
 
-    // 이메일 마스킹 (예: te***@gmail.com)
+    // 이메일 마스킹
     private String maskEmail(String email) {
         int atIndex = email.indexOf('@');
         if (atIndex <= 2) return email;
