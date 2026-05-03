@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local  # 기본은 로컬
+    active: local
 
   jpa:
     hibernate:

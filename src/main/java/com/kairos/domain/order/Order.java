@@ -31,7 +31,6 @@ public class Order {
     @Column(nullable = false)
     private Integer totalPrice;
 
-    // Shipping info
     private String recipient;
     private String phone;
     private String address;
