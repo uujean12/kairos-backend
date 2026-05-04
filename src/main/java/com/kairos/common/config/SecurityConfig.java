@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/admin/upload").authenticated()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

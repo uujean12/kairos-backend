@@ -1,8 +1,12 @@
 package com.kairos.infrastructure.web;
 
+import com.kairos.application.email.EmailVerificationService;
+import com.kairos.domain.user.EmailVerification;
+import com.kairos.domain.user.EmailVerificationRepository;
 import com.kairos.domain.user.User;
 import com.kairos.domain.user.UserRepository;
 import com.kairos.infrastructure.security.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Map;
 
 @RestController
@@ -20,6 +25,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationRepository emailVerificationRepository;
 
     @Value("${kakao.client-id:}")
     private String kakaoClientId;
@@ -30,8 +36,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
         String email = body.get("email");
-        String password = body.get("password");
         String name = body.get("name");
+        String password = body.get("password");
 
         if (userRepository.existsByEmail(email)) {
             return ResponseEntity.badRequest()
@@ -40,14 +46,20 @@ public class AuthController {
 
         User user = User.builder()
                 .email(email)
-                .password(passwordEncoder.encode(password))
                 .name(name)
+                .password(passwordEncoder.encode(password))
                 .provider(User.AuthProvider.LOCAL)
                 .build();
 
-        User saved = userRepository.save(user);
-        String token = jwtTokenProvider.generateToken(saved.getId(), saved.getEmail());
-        return ResponseEntity.ok(Map.of("accessToken", token, "user", toUserMap(saved)));
+        userRepository.save(user);
+
+        // 이메일 인증 메일 발송
+        emailVerificationService.sendVerificationEmail(email);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.",
+                "email", email
+        ));
     }
 
     @PostMapping("/login")
@@ -59,6 +71,12 @@ public class AuthController {
                 .filter(u -> u.getPassword() != null &&
                         passwordEncoder.matches(password, u.getPassword()))
                 .map(u -> {
+                    // 이메일 인증 여부 확인
+                    if (!u.isEmailVerified()) {
+                        return ResponseEntity.status(403)
+                                .body(Map.of("message", "이메일 인증이 필요합니다. 메일함을 확인해주세요.",
+                                        "needVerification", true));
+                    }
                     String token = jwtTokenProvider.generateToken(u.getId(), u.getEmail());
                     return ResponseEntity.ok(Map.of("accessToken", token, "user", toUserMap(u)));
                 })
@@ -218,4 +236,46 @@ public class AuthController {
         }
         return ResponseEntity.ok(Map.of("message", "사용 가능한 이메일입니다."));
     }
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
+    private final EmailVerificationService emailVerificationService;
+
+    // 회원가입 후 인증 메일 발송
+    @PostMapping("/send-verification")
+    public ResponseEntity<?> sendVerification(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        emailVerificationService.sendVerificationEmail(email);
+        return ResponseEntity.ok(Map.of("message", "인증 메일이 발송되었습니다."));
+    }
+
+    // 이메일 인증 확인 (메일 링크 클릭 시)
+    @GetMapping("/verify")
+    public void verify(@RequestParam String token, HttpServletResponse response) throws IOException {
+        try {
+            emailVerificationService.verifyEmail(token);
+            response.sendRedirect(frontendUrl + "/login?verified=true");
+        } catch (Exception e) {
+            response.sendRedirect(frontendUrl + "/login?verified=false");
+        }
+    }
+
+    @PostMapping("/set-password")
+    public ResponseEntity<?> setPassword(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String password = body.get("password");
+
+        EmailVerification verification = emailVerificationRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
+
+        User user = userRepository.findByEmail(verification.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        user.updatePassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("message", "비밀번호가 설정되었습니다."));
+    }
+
 }

@@ -41,6 +41,16 @@ public class User {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    private boolean emailVerified = false;
+
+    public void verifyEmail() {
+        this.emailVerified = true;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
     public enum Role { USER, ADMIN }
     public enum AuthProvider { LOCAL, GOOGLE, KAKAO }
 
