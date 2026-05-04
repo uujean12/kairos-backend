@@ -6,6 +6,8 @@
 >DDD + 헥사고날 아키텍처를 적용하여 도메인 중심으로 설계된 Spring Boot 기반 RESTful API 서버입니다.<br>
 >토스페이먼츠 결제 연동, OAuth2 소셜 로그인, JWT 인증을 포함한 커머스 핵심 기능을 제공합니다.
 
+kairos : https://www.kaiiros.shop/
+
 <img width="1512" height="807" alt="스크린샷 2026-04-30 오후 12 34 03" src="https://github.com/user-attachments/assets/c8b6c745-2ccb-46bf-9418-388516cf4656" />
 
 <br>
