@@ -201,13 +201,20 @@ public class AuthController {
         String email = body.get("email");
         String newPassword = body.get("newPassword");
 
-        return userRepository.findByEmail(email)
-                .map(u -> {
-                    u.setPassword(passwordEncoder.encode(newPassword));
-                    userRepository.save(u);
-                    return ResponseEntity.ok(Map.of("message", "비밀번호가 변경되었습니다."));
-                })
-                .orElse(ResponseEntity.badRequest().body(Map.of("message", "이메일을 찾을 수 없습니다.")));
+        // 이메일 인증 여부 확인
+        boolean verified = emailVerificationService.isVerified(email);
+        if (!verified) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "이메일 인증이 필요합니다."));
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        user.updatePassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("message", "비밀번호가 변경되었습니다."));
     }
 
     // 이메일 마스킹
