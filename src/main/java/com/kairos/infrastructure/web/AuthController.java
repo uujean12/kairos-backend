@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,6 +72,11 @@ public class AuthController {
                 .filter(u -> u.getPassword() != null &&
                         passwordEncoder.matches(password, u.getPassword()))
                 .map(u -> {
+                    // 탈퇴한 회원 확인
+                    if (u.isWithdrawn()) {
+                        return ResponseEntity.status(403)
+                                .body(Map.of("message", "탈퇴한 회원입니다."));
+                    }
                     // 이메일 인증 여부 확인
                     if (!u.isEmailVerified()) {
                         return ResponseEntity.status(403)
@@ -276,6 +282,40 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.ok(Map.of("message", "비밀번호가 설정되었습니다."));
+    }
+
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<?> withdraw(@AuthenticationPrincipal UserDetails userDetails,
+                                      @RequestBody Map<String, String> body) {
+        String password = body.get("password");
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 소셜 로그인 유저는 비밀번호 확인 생략
+        if (user.getProvider() == User.AuthProvider.LOCAL) {
+            if (password == null || !passwordEncoder.matches(password, user.getPassword())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "비밀번호가 올바르지 않습니다."));
+            }
+        }
+
+        // 소프트 삭제
+        user.withdraw();
+        userRepository.save(user);
+
+        // 카카오 로그인 유저면 카카오 세션도 해제
+        if (user.getProvider() == User.AuthProvider.KAKAO) {
+            String kakaoLogoutUrl = "https://kauth.kakao.com/oauth/logout"
+                    + "?client_id=" + kakaoClientId
+                    + "&logout_redirect_uri=" + kakaoLogoutRedirectUri;
+            return ResponseEntity.ok(Map.of(
+                    "message", "탈퇴가 완료되었습니다.",
+                    "kakaoLogoutUrl", kakaoLogoutUrl
+            ));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "탈퇴가 완료되었습니다."));
     }
 
 }

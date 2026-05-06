@@ -43,6 +43,8 @@ public class User {
 
     private boolean emailVerified = false;
 
+    private LocalDateTime deletedAt;
+
     public void verifyEmail() {
         this.emailVerified = true;
     }
@@ -61,5 +63,15 @@ public class User {
     public void updateContactInfo(String phone, String address) {
         if (phone != null && !phone.isEmpty()) this.phone = phone;
         if (address != null && !address.isEmpty()) this.address = address;
+    }
+
+    // 도메인 로직 - 회원 탈퇴
+    public void withdraw() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    // 탈퇴 여부 확인
+    public boolean isWithdrawn() {
+        return this.deletedAt != null;
     }
 }
